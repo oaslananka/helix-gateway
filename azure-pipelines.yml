@@ -18,12 +18,12 @@ variables:
 
 steps:
   - checkout: self
-    clean: true
+    clean: "true"
 
-  - task: UseNode@1
+  - task: NodeTool@0
     displayName: Use Node.js $(node_version)
     inputs:
-      version: "$(node_version)"
+      versionSpec: "$(node_version)"
 
   - task: Cache@2
     displayName: Cache npm packages
