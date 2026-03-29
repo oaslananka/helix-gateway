@@ -2,7 +2,6 @@
 
 > Production-grade MCP Gateway that aggregates tools from remote agents over WebSocket.
 
-[![CI](https://github.com/oaslananka/helix-gateway/actions/workflows/ci.yml/badge.svg)](https://github.com/oaslananka/helix-gateway/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Node.js Version](https://img.shields.io/badge/node-%3E%3D20-brightgreen)](package.json)
 [![Docker](https://img.shields.io/badge/docker-ghcr.io-blue)](https://github.com/oaslananka/helix-gateway/pkgs/container/helix-gateway)
@@ -88,8 +87,13 @@ This gateway works with [helix-agent](https://github.com/oaslananka/helix-agent)
 Built with AI assistance (Claude). Architecture, security design and deployment
 configuration by the maintainer.
 
+CI for this repository runs on Azure Pipelines. Archived GitHub Actions workflows are
+kept only for reference and are not part of the active delivery path.
+
 See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 
 MIT
+
+<!-- CI AUTO TEST 2026-03-29T10:40:30+03:00 -->
