@@ -1,0 +1,80 @@
+trigger:
+  branches:
+    include:
+      - main
+
+pr:
+  branches:
+    include:
+      - main
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  node_version: "20.x"
+  npm_config_cache: "$(Pipeline.Workspace)/.npm"
+  image_name: "helix-gateway"
+
+steps:
+  - checkout: self
+    clean: true
+
+  - task: UseNode@1
+    displayName: Use Node.js $(node_version)
+    inputs:
+      version: "$(node_version)"
+
+  - task: Cache@2
+    displayName: Cache npm packages
+    inputs:
+      key: 'npm | "$(Agent.OS)" | package-lock.json'
+      restoreKeys: |
+        npm | "$(Agent.OS)"
+      path: "$(npm_config_cache)"
+
+  - script: npm ci --cache $(npm_config_cache) --prefer-offline
+    displayName: Install dependencies
+
+  - script: npm run lint
+    displayName: Lint
+
+  - script: npm run typecheck
+    displayName: Type check
+
+  - script: npm test
+    displayName: Run tests
+
+  - script: npm run build
+    displayName: Build
+
+  - script: npx @cyclonedx/cyclonedx-npm --output-format json --output-file sbom.json
+    displayName: Generate SBOM
+
+  - script: docker build -t $(image_name):$(Build.BuildId) .
+    displayName: Build Docker image
+
+  - script: |
+      docker run -d --name helix-gateway-smoke \
+        -e PORT=3000 \
+        -e AGENT_KEYS_JSON='{"test-agent":"test-key-ci"}' \
+        -e PUBLIC_URL='http://localhost:3000' \
+        $(image_name):$(Build.BuildId)
+      sleep 5
+      docker logs helix-gateway-smoke
+      docker rm -f helix-gateway-smoke
+    displayName: Smoke test container
+
+  - script: |
+      mkdir -p "$(Build.ArtifactStagingDirectory)/dist"
+      cp -R dist/. "$(Build.ArtifactStagingDirectory)/dist"
+      cp sbom.json "$(Build.ArtifactStagingDirectory)/sbom.json"
+    displayName: Stage build artifacts
+
+  - task: PublishPipelineArtifact@1
+    displayName: Publish deploy artifact
+    condition: succeeded()
+    inputs:
+      targetPath: "$(Build.ArtifactStagingDirectory)"
+      artifact: "helix-gateway"
+      publishLocation: "pipeline"
