@@ -1,0 +1,16 @@
+node_modules/
+dist/
+.env
+.env.local
+*.log
+.DS_Store
+coverage/
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Generated files - do not commit
+sbom.json
+*.sbom.json
+helix-gateway.zip

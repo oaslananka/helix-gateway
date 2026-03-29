@@ -1,0 +1,62 @@
+services:
+  helix-gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: helix-gateway
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - LOG_LEVEL=info
+      # Agent authentication keys - MUST match agent token
+      - AGENT_KEYS_JSON={"amd2700x":"helix-secret-2026","msi":"helix-secret-2026"}
+      # Optional internal bearer token for /sse endpoints
+      # - INTERNAL_BEARER_TOKEN=your-bearer-token-here
+      - AGENT_AUTO_NAMESPACE=true
+      - ALLOW_SINGLE_AGENT_NO_PREFIX=true
+      - AGENT_CAPABILITY_CACHE_TTL_MS=0
+      - AGENT_CALL_TIMEOUT_MS=30000
+      - AGENT_KEEPALIVE_INTERVAL_MS=15000
+      - CIRCUIT_BREAKER_FAILURE_THRESHOLD=5
+      - CIRCUIT_BREAKER_RESET_TIMEOUT_MS=60000
+      - RATE_LIMIT_WINDOW_MS=60000
+      - RATE_LIMIT_MAX_REQUESTS=100
+      - RATE_LIMIT_AGENT_WS_MAX=10
+      - DUPLICATE_AGENT_STRATEGY=kick_old
+      - ENABLE_METRICS=true
+      - SSE_KEEPALIVE_INTERVAL_MS=15000
+    healthcheck:
+      test: [ "CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/health_check" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - nginxproxymanager_default
+
+networks:
+  nginxproxymanager_default:
+    external: true
+
+  tempo:
+    image: grafana/tempo:latest
+    command: ["-config.file=/etc/tempo.yaml"]
+    volumes:
+      - ./observability/tempo.yaml:/etc/tempo.yaml
+    ports:
+      - "4318:4318"
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+    volumes:
+      - ./observability/grafana-datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml
+    depends_on:
+      - tempo
